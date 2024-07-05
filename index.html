@@ -180,7 +180,7 @@
             }
             const result = document.getElementById('result');
             result.innerHTML += `
-                <br>Your next period is expected on <strong>${nextPeriod.toDateString()}</strong> 😊<br>
+                <br>Your next period is expected on <strong> <br>${nextPeriod.toDateString()}</strong> 😊<br>
                 Here are the next two predicted periods:<br>
                 ${nextFewPeriods.map(date => `<div>${date}</div>`).join('')}
             `;
