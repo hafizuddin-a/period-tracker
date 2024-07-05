@@ -173,16 +173,9 @@
         if (periodHistory.length > 0 && averageCycleLength) {
             const lastPeriod = new Date(periodHistory[periodHistory.length - 1].date);
             const nextPeriod = new Date(lastPeriod.getTime() + (averageCycleLength * 24 * 60 * 60 * 1000));
-            const nextFewPeriods = [];
-            for (let i = 1; i <= 2; i++) {
-                const futurePeriod = new Date(nextPeriod.getTime() + (averageCycleLength * 24 * 60 * 60 * 1000 * (i - 1)));
-                nextFewPeriods.push(futurePeriod.toDateString());
-            }
             const result = document.getElementById('result');
             result.innerHTML += `
                 <br>Your next period is expected on <strong> <br>${nextPeriod.toDateString()}</strong> 😊<br>
-                Here are the next two predicted periods:<br>
-                ${nextFewPeriods.map(date => `<div>${date}</div>`).join('')}
             `;
 
             const today = new Date();
