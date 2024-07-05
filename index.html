@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Period Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .container {
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        input[type="date"] {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .button {
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+        .button:hover {
+            background-color: #218838;
+        }
+        .button-clear {
+            background-color: #dc3545;
+        }
+        .button-clear:hover {
+            background-color: #c82333;
+        }
+        .result, .countdown {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .history {
+            margin-top: 20px;
+        }
+        .history-item {
+            background-color: #f1f1f1;
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>✨Sofia's Period✨</h1>
+    <div class="form-group">
+        <label for="lastPeriod">Last Period Date:</label>
+        <input type="date" id="lastPeriod">
+    </div>
+    <button class="button" onclick="trackPeriod()">Track</button>
+    <div class="result" id="result"></div>
+    <div class="countdown" id="countdown"></div>
+    <div class="history" id="history"></div>
+    <button class="button button-clear" onclick="clearData()">Clear Data</button>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        // Request notification permission if not already granted
+        if (Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        // Load saved data from local storage
+        if (localStorage.getItem('periodHistory')) {
+            displayHistory();
+            calculateNextPeriod();
+        }
+    });
+
+    function trackPeriod() {
+        const lastPeriod = document.getElementById('lastPeriod').value;
+
+        if (lastPeriod) {
+            let periodHistory = JSON.parse(localStorage.getItem('periodHistory')) || [];
+            periodHistory.push({ date: lastPeriod });
+
+            // Sort history by date
+            periodHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            // Calculate cycle lengths and update history
+            periodHistory = periodHistory.map((entry, index, array) => {
+                if (index > 0) {
+                    entry.cycleLength = Math.round((new Date(entry.date) - new Date(array[index - 1].date)) / (1000 * 60 * 60 * 24));
+                }
+                return entry;
+            });
+
+            localStorage.setItem('periodHistory', JSON.stringify(periodHistory));
+            displayHistory();
+            calculateNextPeriod();
+        } else {
+            alert('Please fill out all fields.');
+        }
+    }
+
+    function displayHistory() {
+        const historyContainer = document.getElementById('history');
+        const periodHistory = JSON.parse(localStorage.getItem('periodHistory')) || [];
+        historyContainer.innerHTML = '<h3>Period History</h3>';
+        periodHistory.forEach(entry => {
+            historyContainer.innerHTML += `
+                <div class="history-item">
+                    Date: ${entry.date} ${entry.cycleLength ? `- Cycle Length: ${entry.cycleLength} days` : ''}
+                </div>
+            `;
+        });
+
+        if (periodHistory.length > 1) {
+            const averageCycleLength = Math.round(periodHistory.slice(1).reduce((sum, entry) => sum + entry.cycleLength, 0) / (periodHistory.length - 1));
+            localStorage.setItem('averageCycleLength', averageCycleLength);
+            document.getElementById('result').innerHTML = `Average Cycle Length: <strong>${averageCycleLength} days</strong>`;
+        }
+    }
+
+    function calculateNextPeriod() {
+        const periodHistory = JSON.parse(localStorage.getItem('periodHistory')) || [];
+        const averageCycleLength = parseInt(localStorage.getItem('averageCycleLength'));
+
+        if (periodHistory.length > 0 && averageCycleLength) {
+            const lastPeriod = new Date(periodHistory[periodHistory.length - 1].date);
+            const nextPeriod = new Date(lastPeriod.getTime() + (averageCycleLength * 24 * 60 * 60 * 1000));
+            const nextFewPeriods = [];
+            for (let i = 1; i <= 2; i++) {
+                const futurePeriod = new Date(nextPeriod.getTime() + (averageCycleLength * 24 * 60 * 60 * 1000 * (i - 1)));
+                nextFewPeriods.push(futurePeriod.toDateString());
+            }
+            const result = document.getElementById('result');
+            result.innerHTML += `
+                <br>Your next period is expected on <strong>${nextPeriod.toDateString()}</strong> 😊<br>
+                Here are the next two predicted periods:<br>
+                ${nextFewPeriods.map(date => `<div>${date}</div>`).join('')}
+            `;
+
+            // Calculate and display the countdown
+            const today = new Date();
+            const timeDiff = nextPeriod.getTime() - today.getTime();
+            const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+            const countdown = document.getElementById('countdown');
+            countdown.innerHTML = `Days until next period: <strong>${daysDiff}</strong>`;
+
+            // Show notification if next period is less than 5 days away
+            if (daysDiff > 0 && daysDiff <= 5 && Notification.permission === 'granted') {
+                new Notification('Period Tracker Reminder', {
+                    body: `Your next period is in ${daysDiff} days. Remember to prepare your essentials <3`
+                });
+            }
+        }
+    }
+
+    function clearData() {
+        if (confirm('Are you sure you want to clear all period data?')) {
+            localStorage.removeItem('periodHistory');
+            localStorage.removeItem('averageCycleLength');
+            document.getElementById('lastPeriod').value = '';
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('countdown').innerHTML = '';
+            document.getElementById('history').innerHTML = '';
+        }
+    }
+</script>
+
+</body>
+</html>
