@@ -14,12 +14,14 @@
         h1 {
             text-align: center;
             color: #333;
+            font-size: 1.8em;
+            margin-bottom: 20px;
         }
         .container {
-            max-width: 500px;
+            max-width: 100%;
             margin: auto;
             background: white;
-            padding: 20px;
+            padding: 15px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
         }
@@ -40,13 +42,14 @@
         }
         .button {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             background-color: #28a745;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             margin-bottom: 15px;
+            font-size: 1.1em;
         }
         .button:hover {
             background-color: #218838;
@@ -60,6 +63,7 @@
         .result, .countdown {
             margin-top: 20px;
             text-align: center;
+            font-size: 1.1em;
         }
         .history {
             margin-top: 20px;
@@ -69,6 +73,18 @@
             padding: 10px;
             margin-bottom: 5px;
             border-radius: 4px;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 10px;
+            }
+            .button {
+                padding: 10px;
+                font-size: 1em;
+            }
         }
     </style>
 </head>
@@ -89,12 +105,10 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', (event) => {
-        // Request notification permission if not already granted
         if (Notification.permission === 'default') {
             Notification.requestPermission();
         }
 
-        // Load saved data from local storage
         if (localStorage.getItem('periodHistory')) {
             displayHistory();
             calculateNextPeriod();
@@ -108,10 +122,8 @@
             let periodHistory = JSON.parse(localStorage.getItem('periodHistory')) || [];
             periodHistory.push({ date: lastPeriod });
 
-            // Sort history by date
             periodHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-            // Calculate cycle lengths and update history
             periodHistory = periodHistory.map((entry, index, array) => {
                 if (index > 0) {
                     entry.cycleLength = Math.round((new Date(entry.date) - new Date(array[index - 1].date)) / (1000 * 60 * 60 * 24));
@@ -165,14 +177,12 @@
                 ${nextFewPeriods.map(date => `<div>${date}</div>`).join('')}
             `;
 
-            // Calculate and display the countdown
             const today = new Date();
             const timeDiff = nextPeriod.getTime() - today.getTime();
             const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
             const countdown = document.getElementById('countdown');
             countdown.innerHTML = `Days until next period: <strong>${daysDiff}</strong>`;
 
-            // Show notification if next period is less than 5 days away
             if (daysDiff > 0 && daysDiff <= 5 && Notification.permission === 'granted') {
                 new Notification('Period Tracker Reminder', {
                     body: `Your next period is in ${daysDiff} days. Remember to prepare your essentials <3`
