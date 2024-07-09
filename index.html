@@ -132,6 +132,7 @@
             transform: rotate(90deg);
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.3/dist/purify.min.js"></script>
 </head>
 <body>
 
@@ -180,8 +181,12 @@
         }
     });
 
+    function sanitizeInput(input) {
+        return DOMPurify.sanitize(input);
+    }
+
     function trackPeriod() {
-        const lastPeriod = document.getElementById('lastPeriod').value;
+        const lastPeriod = sanitizeInput(document.getElementById('lastPeriod').value);
 
         if (lastPeriod) {
             let periodHistory = JSON.parse(localStorage.getItem('periodHistory')) || [];
@@ -211,7 +216,7 @@
         periodHistory.forEach(entry => {
             historyContainer.innerHTML += `
                 <div class="history-item">
-                    Date: ${entry.date} ${entry.cycleLength ? `- Cycle Length: ${entry.cycleLength} days` : ''}
+                    Date: ${sanitizeInput(entry.date)} ${entry.cycleLength ? `- Cycle Length: ${entry.cycleLength} days` : ''}
                 </div>
             `;
         });
@@ -228,7 +233,7 @@
         const averageCycleLength = parseInt(localStorage.getItem('averageCycleLength'));
 
         if (periodHistory.length > 0 && averageCycleLength) {
-            const lastPeriod = new Date(periodHistory[periodHistory.length - 1].date);
+            const lastPeriod = new Date(sanitizeInput(periodHistory[periodHistory.length - 1].date));
             const nextPeriod = new Date(lastPeriod.getTime() + (averageCycleLength * 24 * 60 * 60 * 1000));
             const result = document.getElementById('result');
             result.innerHTML += `
